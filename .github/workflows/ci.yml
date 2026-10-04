@@ -15,7 +15,7 @@ jobs:
         run: node --test test/
       - name: Гейт ПДн
         run: node scripts/scan-pii.mjs
-      - name: Гейт транспорта: LLM только через лестницу
+      - name: Гейт транспорта — LLM только через лестницу
         run: node scripts/check-no-direct-openrouter.mjs
       - name: Сырьё прода не должно попасть в репозиторий
         run: |
