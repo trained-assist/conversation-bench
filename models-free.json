@@ -1,0 +1,37 @@
+{
+  "_comment": "Бесплатные ступени: лестница `free` — жёсткий потолок $0 (Go free → OpenRouter :free → zen free). Смысл набора — проверить, тянет ли бесплатная ступень письма кандидатам. max_tokens 4000: у reasoning-моделей лимит ответа съедается рассуждениями (finish=length при 1200 давал пустой text в 156 ответах из 400).",
+  "models": [
+    {
+      "id": "space-bunny-free",
+      "ladder": "free",
+      "rung": "opencode-go/space-bunny-free",
+      "role": "cand",
+      "note": "первая ступень бесплатной лестницы",
+      "max_tokens": 4000
+    },
+    {
+      "id": "longcat-2.5-preview-free",
+      "ladder": "free",
+      "rung": "opencode-go/longcat-2.5-preview-free",
+      "role": "cand",
+      "note": "вторая бесплатная ступень Go",
+      "max_tokens": 4000
+    },
+    {
+      "id": "nemotron-3-super-free",
+      "ladder": "free",
+      "rung": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "role": "cand",
+      "note": "крупная открытая модель через бесплатный тариф",
+      "max_tokens": 4000
+    },
+    {
+      "id": "ling-3.0-flash-sante-free",
+      "ladder": "free",
+      "rung": "openrouter/inclusionai/ling-3.0-flash-sante:free",
+      "role": "cand",
+      "note": "ling по-русски, бесплатный тариф",
+      "max_tokens": 4000
+    }
+  ]
+}

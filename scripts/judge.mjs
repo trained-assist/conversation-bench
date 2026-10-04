@@ -9,12 +9,19 @@ import { readFileSync, writeFileSync, mkdirSync, createWriteStream } from 'node:
 import { dirname } from 'node:path';
 import { deterministicChecks, repeatedQuestion, scoreChecks } from '../src/checks.mjs';
 import { loadDataset } from '../src/dataset.mjs';
+import { ladderChat, ladderToken } from '../src/ladder.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const resultsFile = args.results;
-const judgeModel = args['judge-model'] ?? 'openrouter/google/gemini-2.5-flash';
 const out = args.out ?? resultsFile.replace(/\.jsonl$/, '.judged.jsonl');
-const apiKey = process.env.OPENROUTER_API_KEY;
+
+// Судья — тоже ступень НАШЕЙ лестницы, зафиксированная явно: температура 0 и одна и та же
+// ступень во всех прогонах, иначе «слепой» судья начинает плавать между прогонами.
+// По умолчанию берём блок judge из models.json, если он там есть.
+const judgeCfg = args['judge-rung']
+  ? { ladder: args['judge-ladder'] ?? 'conversation', rung: args['judge-rung'] }
+  : readJudgeCfg(args.models ?? 'models.json');
+const judgeId = `${judgeCfg.ladder}/${judgeCfg.rung}`;
 
 const ds = loadDataset(args.dataset ?? 'datasets/current');
 const byCase = new Map(ds.cases.map((c) => [c.id, c]));
@@ -37,8 +44,8 @@ for (const r of results) {
 
   const entry = { ...r, deterministic: { ...scoreChecks(det.checks), checks: det.checks } };
 
-  if (!r.error && c.reference?.text && apiKey) {
-    entry.judge = await blindPair(c.reference.text, r.text, prevCandidates, judgeModel);
+  if (!r.error && c.reference?.text && ladderToken()) {
+    entry.judge = await blindPair(c.reference.text, r.text, prevCandidates, judgeCfg);
   }
   stream.write(JSON.stringify(entry) + '\n');
 }
@@ -46,7 +53,8 @@ stream.end();
 await new Promise((r) => stream.on('finish', r));
 console.log(`Оценено ${results.length} → ${out}`);
 
-async function blindPair(prodText, candText, history, model) {
+async function blindPair(prodText, candText, history, cfg) {
+  const model = `${cfg.ladder}/${cfg.rung}`;
   // Стабильный порядок: первая буква case id → A/B. Перемешивание есть, но воспроизводимо.
   const flip = (r.case ?? '').charCodeAt(1) % 2 === 1;
   const A = flip ? candText : prodText;
@@ -70,18 +78,15 @@ ${B}
 {"goal":[0,0],"facts":[0,0],"repeats":[0,0],"tone":[0,0],"natural":[0,0],"winner":"A"|"B"|"tie","comment":"до 200 символов"}`;
 
   try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model, temperature: 0,
-        messages: [{ role: 'user', content: rubric }],
-        response_format: { type: 'json_object' },
-      }),
-    });
-    if (!res.ok) return { error: `${res.status}`, model };
-    const json = await res.json();
-    const raw = json.choices?.[0]?.message?.content ?? '{}';
+    const raw = (await ladderChat({
+      messages: [{ role: 'user', content: rubric }],
+      ladder: cfg.ladder,
+      rung: cfg.rung,
+      temperature: 0,
+      maxTokens: 1200,
+      responseFormat: { type: 'json_object' },
+      source: 'conversation-bench-judge',
+    })).content;
     const parsed = JSON.parse(raw);
     // Судья выносит вердикт про A/B; возвращаем, кто выиграл у ПРОДА.
     const winner = parsed.winner;
@@ -106,6 +111,16 @@ function pickScores(parsed, i) {
     if (typeof v === 'number') out[k] = v;
   }
   return out;
+}
+
+// Блок judge из models.json: { "ladder": …, "rung": … }. Без него — дефолт лестницы
+// conversation (та ступень, которой прод пишет письма кандидатам).
+function readJudgeCfg(modelsFile) {
+  try {
+    const cfg = JSON.parse(readFileSync(modelsFile, 'utf8')).judge;
+    if (cfg?.ladder && cfg?.rung) return { ladder: cfg.ladder, rung: cfg.rung };
+  } catch { /* нет файла или блока — дефолт ниже */ }
+  return { ladder: 'conversation', rung: 'openrouter/google/gemini-2.5-flash' };
 }
 
 function parseArgs(argv) {
