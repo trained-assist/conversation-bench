@@ -1,0 +1,49 @@
+{
+  "_comment": "Кандидаты на перестановку ступени лестницы conversation (trained-assist-llm-ladder, config/ladders.json). Цены — config/prices.json от 2026-10-03, $ за 1М токенов [input, output]. mimo берётся зеркалом openrouter/xiaomi/mimo-v2.6-flash вместо opencode-go/mimo-v2.6-flash: раннер говорит только с OpenRouter, модель та же, цена подписки Go тут не учитывается. Ступень запинена — failover лестницы в прогоне отключён намеренно.",
+  "models": [
+    {
+      "model": "openrouter/google/gemini-3.1-flash-lite-preview",
+      "role": "prod",
+      "note": "текущая продовая ступень, baseline",
+      "price": {
+        "input": 0.25,
+        "output": 1.5
+      }
+    },
+    {
+      "model": "openrouter/google/gemini-2.5-flash",
+      "role": "cand",
+      "note": "следующая ступень",
+      "price": {
+        "input": 0.3,
+        "output": 2.5
+      }
+    },
+    {
+      "model": "openrouter/xiaomi/mimo-v2.6-flash",
+      "role": "cand",
+      "note": "зеркало opencode-go/mimo-v2.6-flash",
+      "price": {
+        "input": 0.14,
+        "output": 0.28
+      }
+    },
+    {
+      "model": "openrouter/inclusionai/ling-3.0-flash",
+      "role": "cand",
+      "note": "самая дешёвая открытая ступень",
+      "price": {
+        "input": 0.021,
+        "output": 0.063
+      }
+    }
+  ],
+  "judge": {
+    "model": "openrouter/google/gemini-2.5-flash",
+    "note": "слепой судья, температура 0 — фиксированная ступень, та же для всех прогонов",
+    "price": {
+      "input": 0.3,
+      "output": 2.5
+    }
+  }
+}
