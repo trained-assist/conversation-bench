@@ -5,6 +5,7 @@
 //   node scripts/report.mjs --results results/run.judged.jsonl --models models.json --out results/report.md
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { readModelConfig, priceById } from '../src/config.mjs';
 
 const sumScores = (j) => {
   const s = j.scores?.A ?? {};
@@ -12,7 +13,9 @@ const sumScores = (j) => {
   return v;
 };
 const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '—');
-const short = (m) => m.replace(/^openrouter\//, '');
+// Отчёт может печатать и наш id, и «сырую» ступень лестницы (provider/model) — убираем
+// префикс провайдера, чтобы колонка читалась: opencode-go/mimo → mimo.
+const short = (m) => m.replace(/^(openrouter|opencode-go|opencode-zen)\//, '');
 const sorted = (a) => [...a].sort((x, y) => x - y);
 const median = (a) => (a.length ? sorted(a)[Math.floor(a.length / 2)] : null);
 const quant = (a, q) => (a.length ? sorted(a)[Math.min(sorted(a).length - 1, Math.floor(a.length * q))] : null);
@@ -21,8 +24,10 @@ const p95 = (a) => quant(a, 0.95);
 
 const args = parseArgs(process.argv.slice(2));
 const rows = readFileSync(args.results, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
-const models = JSON.parse(readFileSync(args.models ?? 'models.json', 'utf8')).models;
-const price = Object.fromEntries(models.map((m) => [m.model, m.price ?? {}]));
+const models = readModelConfig(args.models ?? 'models.json').models;
+// Ключ цены — id модели: в models.json после перехода на формат лестницы поля `model` уже нет,
+// и цена молча превратилась бы в «—». Старое поле `model` держим как фолбэк.
+const price = priceById(models);
 
 const groups = new Map();
 for (const r of rows) {
