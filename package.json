@@ -1,0 +1,16 @@
+{
+  "name": "conversation-bench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Независимый бенчмарк генерации писем кандидатам: модели гоняются на реальных промптах, оцениваются детерминированно и слепым судьёй.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test test/",
+    "gate:pii": "node scripts/scan-pii.mjs",
+    "extract": "node scripts/extract-corpus.mjs",
+    "run": "node scripts/run-bench.mjs",
+    "judge": "node scripts/judge.mjs",
+    "report": "node scripts/report.mjs"
+  }
+}

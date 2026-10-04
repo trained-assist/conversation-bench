@@ -1,0 +1,23 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Тесты обезличивания и сборки корпуса
+        run: node --test test/
+      - name: Гейт ПДн
+        run: node scripts/scan-pii.mjs
+      - name: Сырьё прода не должно попасть в репозиторий
+        run: |
+          if git ls-files | grep -qE 'conversation-history|\.raw\.jsonl'; then
+            echo "::error::в индексе git есть сырые логи прода"; exit 1
+          fi
+          echo "сырых логов в индексе нет"
