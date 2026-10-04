@@ -10,6 +10,7 @@ import { dirname } from 'node:path';
 import { deterministicChecks, repeatedQuestion, scoreChecks } from '../src/checks.mjs';
 import { loadDataset } from '../src/dataset.mjs';
 import { ladderChat, ladderToken } from '../src/ladder.mjs';
+import { flipFor } from '../src/blind.mjs';
 import { readModelConfig } from '../src/config.mjs';
 
 const args = parseArgs(process.argv.slice(2));
@@ -22,7 +23,6 @@ const out = args.out ?? resultsFile.replace(/\.jsonl$/, '.judged.jsonl');
 const judgeCfg = args['judge-rung']
   ? { ladder: args['judge-ladder'] ?? 'conversation', rung: args['judge-rung'] }
   : readJudgeCfg(args.models ?? 'models.json');
-const judgeId = `${judgeCfg.ladder}/${judgeCfg.rung}`;
 
 const ds = loadDataset(args.dataset ?? 'datasets/current');
 const byCase = new Map(ds.cases.map((c) => [c.id, c]));
@@ -46,7 +46,7 @@ for (const r of results) {
   const entry = { ...r, deterministic: { ...scoreChecks(det.checks), checks: det.checks } };
 
   if (!r.error && c.reference?.text && ladderToken()) {
-    entry.judge = await blindPair(c.reference.text, r.text, prevCandidates, judgeCfg);
+    entry.judge = await blindPair(c.id, c.reference.text, r.text, prevCandidates, judgeCfg);
   }
   stream.write(JSON.stringify(entry) + '\n');
 }
@@ -54,10 +54,11 @@ stream.end();
 await new Promise((r) => stream.on('finish', r));
 console.log(`Оценено ${results.length} → ${out}`);
 
-async function blindPair(prodText, candText, history, cfg) {
+async function blindPair(caseId, prodText, candText, history, cfg) {
   const model = `${cfg.ladder}/${cfg.rung}`;
-  // Стабильный порядок: первая буква case id → A/B. Перемешивание есть, но воспроизводимо.
-  const flip = (r.case ?? '').charCodeAt(1) % 2 === 1;
+  // Стабильный порядок: бит из всего id → A/B. Перемешивание есть, воспроизводимо,
+  // и не вырождается в «прод всегда A» (см. src/blind.mjs).
+  const flip = flipFor(caseId);
   const A = flip ? candText : prodText;
   const B = flip ? prodText : candText;
   const rubric = `Ты оцениваешь письма рекрутера кандидату (рубрика 0–2 по каждому пункту).
@@ -92,7 +93,6 @@ ${B}
     // Судья выносит вердикт про A/B; возвращаем, кто выиграл у ПРОДА.
     const winner = parsed.winner;
     const prodWon = winner === (flip ? 'B' : 'A');
-    const candWon = winner === (flip ? 'A' : 'B');
     return {
       model,
       winner_raw: winner,
