@@ -11,6 +11,7 @@ import { deterministicChecks, repeatedQuestion, scoreChecks } from '../src/check
 import { loadDataset } from '../src/dataset.mjs';
 import { ladderChat, ladderToken } from '../src/ladder.mjs';
 import { flipFor } from '../src/blind.mjs';
+import { parseJudgeJson } from '../src/judge-parse.mjs';
 import { readModelConfig } from '../src/config.mjs';
 
 const args = parseArgs(process.argv.slice(2));
@@ -89,7 +90,9 @@ ${B}
       responseFormat: { type: 'json_object' },
       source: 'conversation-bench-judge',
     })).content;
-    const parsed = JSON.parse(raw);
+    // Модель часто дописывает хвост после объекта — вынимаем первый валидный JSON,
+    // иначе кейс выпадал из оценки (см. src/judge-parse.mjs).
+    const parsed = parseJudgeJson(raw);
     // Судья выносит вердикт про A/B; возвращаем, кто выиграл у ПРОДА.
     const winner = parsed.winner;
     const prodWon = winner === (flip ? 'B' : 'A');
