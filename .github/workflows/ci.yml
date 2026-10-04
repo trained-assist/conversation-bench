@@ -11,7 +11,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Тесты обезличивания и сборки корпуса
+      - name: Зависимости (gpt-tokenizer для scripts/budget.mjs)
+        run: npm ci
+      - name: Тесты обезличивания, конфига моделей и сборки корпуса
         run: node --test test/
       - name: Гейт ПДн
         run: node scripts/scan-pii.mjs

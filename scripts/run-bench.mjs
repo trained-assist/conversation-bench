@@ -18,12 +18,13 @@ import { appendFileSync, writeFileSync, mkdirSync, readFileSync, existsSync } fr
 import { dirname } from 'node:path';
 import { loadDataset } from '../src/dataset.mjs';
 import { ladderChat, ladderToken } from '../src/ladder.mjs';
+import { readModelConfig } from '../src/config.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const dryRun = !!args['dry-run'];
 const concurrency = Number(args.concurrency ?? 5);
 const limit = args.limit ? Number(args.limit) : Infinity;
-const models = JSON.parse(readFileSync(args.models ?? 'models.json', 'utf8')).models.map(normalizeModel);
+const models = readModelConfig(args.models ?? 'models.json').models;
 const out = args.out ?? `results/bench-${new Date().toISOString().replace(/[:.]/g, '-')}.jsonl`;
 
 const ds = loadDataset(args.dataset ?? 'datasets/current');
@@ -134,13 +135,6 @@ async function runOne(c, m) {
 
 function key(caseId, model) {
   return `${caseId}::${model}`;
-}
-
-// Старое поле `model: "openrouter/<id>"` — это id провайдера, а не ступень лестницы.
-// Приводим к явной паре ladder+rung, чтобы мимо лестницы позвать провайдера было нельзя.
-function normalizeModel(m) {
-  if (!m.ladder || !m.rung) throw new Error(`models.json: у "${m.id ?? m.model ?? '?'}" нет пары ladder+rung`);
-  return { ...m, model: m.id ?? m.model ?? m.rung };
 }
 
 function parseArgs(argv) {

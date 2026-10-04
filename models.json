@@ -1,5 +1,6 @@
 {
-  "_comment": "Ступени НАШЕЙ лестницы (trained-assist-llm-ladder, config/ladders.json), а не id провайдера. ladder+rung — обязательная пара: она запинивается в запросе (ladder_rung), поэтому мы меряем конкретную модель, а не поведение фейловера. Цены — $ за 1М токенов [вход, выход] из config/prices.json лестницы на 2026-10-03. mimo берётся по Go-подписке: та же модель, но без цены токена OpenRouter.",
+  "_comment": "Платные ступени для перестановки лестницы conversation (config/ladders.json лестницы, 2026-10-04). Формат: id — стабильное имя для файла отчёта, ladder+rung — что реально зовём (rung обязан быть в этой лестнице, иначе лестница отвечает 400). Цены — config/prices.json лестницы, $ за 1М токенов [input, output]. Ступень запинена — failover лестницы в прогоне отключён намеренно.",
+  "_conversationRungsToday": "В лестнице conversation сейчас ровно три ступени: gemini-3.1-flash-lite-preview (прод), gemini-2.5-flash, mimo-v2.6-flash (подписка Go). Дешёвые ling-3.0-flash и openrouter/xiaomi/mimo-v2.6-flash в неё не входят — чтобы они стали кандидатами на письма, их нужно сначала ДОБАВИТЬ в лестницу conversation (изменение продукта, не бенчмарка) и зафиксировать здесь.",
   "models": [
     {
       "id": "gemini-3.1-flash-lite-preview",
@@ -7,27 +8,37 @@
       "rung": "openrouter/google/gemini-3.1-flash-lite-preview",
       "role": "prod",
       "note": "текущая продовая ступень, baseline",
-      "price": { "input": 0.25, "output": 1.5 }
+      "price": {
+        "input": 0.25,
+        "output": 1.5
+      }
     },
     {
       "id": "gemini-2.5-flash",
       "ladder": "conversation",
       "rung": "openrouter/google/gemini-2.5-flash",
       "role": "cand",
-      "note": "следующая платная ступень",
-      "price": { "input": 0.3, "output": 2.5 }
+      "note": "следующая ступень",
+      "price": {
+        "input": 0.3,
+        "output": 2.5
+      }
     },
     {
       "id": "mimo-v2.6-flash",
       "ladder": "conversation",
       "rung": "opencode-go/mimo-v2.6-flash",
       "role": "cand",
-      "note": "третья ступень лестницы, Go-подписка (цена токена не та же, что у зеркала на OpenRouter)"
+      "note": "дешёвая ступень из подписки Go; в отчёте цена — по прайсу openrouter/xiaomi/mimo-v2.6-flash (0.14/0.28), подписка Go в прайс не входит",
+      "price": {
+        "input": 0.14,
+        "output": 0.28
+      }
     }
   ],
   "judge": {
     "ladder": "conversation",
     "rung": "openrouter/google/gemini-2.5-flash",
-    "note": "слепой судья: температура 0, одна и та же ступень во всех прогонах"
+    "note": "слепой судья, температура 0 — фиксированная ступень, та же для всех прогонов. Платная: требует кредита у провайдера. Пока кредита нет, судью можно гонять на бесплатной ступени лестницы free (--judge-ladder free --judge-rung openrouter/nvidia/nemotron-3-super-120b-a12b:free) — тогда в отчёте это обязано быть помечено как оценка бесплатным судьёй, а не как baseline."
   }
 }

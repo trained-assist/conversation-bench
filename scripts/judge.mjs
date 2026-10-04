@@ -10,6 +10,7 @@ import { dirname } from 'node:path';
 import { deterministicChecks, repeatedQuestion, scoreChecks } from '../src/checks.mjs';
 import { loadDataset } from '../src/dataset.mjs';
 import { ladderChat, ladderToken } from '../src/ladder.mjs';
+import { readModelConfig } from '../src/config.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 const resultsFile = args.results;
@@ -117,7 +118,7 @@ function pickScores(parsed, i) {
 // conversation (та ступень, которой прод пишет письма кандидатам).
 function readJudgeCfg(modelsFile) {
   try {
-    const cfg = JSON.parse(readFileSync(modelsFile, 'utf8')).judge;
+    const cfg = readModelConfig(modelsFile).judge;
     if (cfg?.ladder && cfg?.rung) return { ladder: cfg.ladder, rung: cfg.rung };
   } catch { /* нет файла или блока — дефолт ниже */ }
   return { ladder: 'conversation', rung: 'openrouter/google/gemini-2.5-flash' };
