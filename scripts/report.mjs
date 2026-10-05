@@ -77,6 +77,21 @@ for (const r of rows) {
   groups.get(r.model).push(r);
 }
 
+// Секция бенча — из конфига моделей: «переписка» (лестница conversation продукта) и
+// «бесплатные» (лестница free). Разные лестницы — разные квоты и разный смысл, поэтому
+// таблица одна на всех не читается: у бесплатных ступеней потолок $0, у переписки — цена
+// входа и продовая ступень.
+// Секция из конфига, а если её нет — по лестнице: conversation это переписка в продукте
+// (hh-skill пишет письма кандидатам), free — бесплатные ступени с потолком $0.
+const sectionOf = (id) => {
+  const m = models.find((x) => x.id === id);
+  if (m?.section) return m.section;
+  if (m?.ladder === 'conversation') return 'переписка';
+  if (m?.ladder === 'free') return 'бесплатные';
+  return null;
+};
+const sections = [...new Set([...groups.keys()].map(sectionOf).filter(Boolean))];
+
 const table = [...groups.entries()].map(([model, rs]) => {
   const ok = rs.filter((r) => !r.error);
   const detPass = ok.filter((r) => r.deterministic?.all_pass);
@@ -101,6 +116,7 @@ const table = [...groups.entries()].map(([model, rs]) => {
 
   return {
     model: short(model),
+    section: sectionOf(model),
     rung,
     tier: rung ? tierOf(rung) : 'эталон (прод, не вызов)',
     n: rs.length,
@@ -128,16 +144,29 @@ const checkOrder = Object.keys(CHECK_LABELS);
 const checkNames = [...new Set(table.flatMap((t) => Object.keys(t.perCheck)))]
   .sort((a, b) => checkOrder.indexOf(a) - checkOrder.indexOf(b));
 
+const tableMd = (t) =>
+  `| ${t.model} | ${t.rung ?? '— (эталон)'} | ${t.tier} | ${t.n} | ${t.errors} | ${t.det} | ${checkNames.map((c) => t.perCheck[c] ?? '—').join(' | ')} | ${t.win} | ${t.tie} | ${t.tin ?? '—'} | ${t.tout ?? '—'} | ${t.reason || '—'} | ${t.maxTok ?? '—'} | ${t.cost} | ${t.p50 ?? '—'} | ${t.p95 ?? '—'} | ${t.judgeSum == null ? '—' : `${t.judgeSum.toFixed(1)}/10`} |`;
+
+const header = `| Модель | Ступень лестницы | Тариф | Ответов | Ошибок вызова | Годных писем | ${checkNames.map((c) => CHECK_LABELS[c] ?? c).join(' | ')} | Побед vs прод | Ничьи | Токены в | Токены out | Из них рассуждения | Лимит ответа | $/письмо | p50 мс | p95 мс | Сумма судьи |`;
+const divider = `|---|---|---|---|---|${checkNames.map(() => '---').join('|')}|---|---|---|---|---|---|---|---|---|`;
+
+// Строки без секции в конфиге (например, эталон) — отдельной группой в конце.
+const sectionTables = sections.map((sec) => {
+  const rows = table.filter((t) => t.section === sec);
+  return [`## Секция «${sec}»`, '', header, divider, ...rows.map(tableMd), ''].join('\n');
+});
+const unsectioned = table.filter((t) => !t.section);
+const restTables = unsectioned.length
+  ? ['## Прочие строки', '', header, divider, ...unsectioned.map(tableMd), ''].join('\n')
+  : '';
+
 const md = [
   '# Отчёт бенчмарка писем кандидатам',
   '',
   `Прогон: ${args.results} · кейсов: ${rows.length} · дата: ${new Date().toISOString().slice(0, 16)}Z`,
   '',
-  `| Модель | Ступень лестницы | Тариф | Ответов | Ошибок вызова | Годных писем | ${checkNames.map((c) => CHECK_LABELS[c] ?? c).join(' | ')} | Побед vs прод | Ничьи | Токены в | Токены out | Из них рассуждения | Лимит ответа | $/письмо | p50 мс | p95 мс | Сумма судьи |`,
-  `|---|---|---|---|---|${checkNames.map(() => '---').join('|')}|---|---|---|---|---|---|---|---|---|`,
-  ...table.map((t) =>
-    `| ${t.model} | ${t.rung ?? '— (эталон)'} | ${t.tier} | ${t.n} | ${t.errors} | ${t.det} | ${checkNames.map((c) => t.perCheck[c] ?? '—').join(' | ')} | ${t.win} | ${t.tie} | ${t.tin ?? '—'} | ${t.tout ?? '—'} | ${t.reason || '—'} | ${t.maxTok ?? '—'} | ${t.cost} | ${t.p50 ?? '—'} | ${t.p95 ?? '—'} | ${t.judgeSum == null ? '—' : `${t.judgeSum.toFixed(1)}/10`} |`),
-  '',
+  ...sectionTables,
+  ...restTables,
   '**Годных писем** — доля ответов, прошедших все проверки сразу. **Ошибок вызова** — транспорт',
   '(429/401/502, пустой ответ), а не качество письма: ступень не ответила, и кейс не измерен.',
   'Колонки ниже — доля ответов, прошедших каждую проверку по отдельности.',

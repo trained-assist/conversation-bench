@@ -1,5 +1,5 @@
 {
-  "_comment": "Платные ступени для перестановки лестницы conversation (config/ladders.json лестницы, 2026-10-04). Формат: id — стабильное имя для файла отчёта, ladder+rung — что реально зовём (rung обязан быть в этой лестнице, иначе лестница отвечает 400). Цены — config/prices.json лестницы, $ за 1М токенов [input, output]. Ступень запинена — failover лестницы в прогоне отключён намеренно.",
+  "_comment": "Секция «переписка» — лестница conversation продукта: hh-skill пишет письма кандидатам. Платные ступени для перестановки лестницы conversation (config/ladders.json лестницы, 2026-10-04). Формат: id — стабильное имя для файла отчёта, ladder+rung — что реально зовём (rung обязан быть в этой лестнице, иначе лестница отвечает 400). Цены — config/prices.json лестницы, $ за 1М токенов [input, output]. Ступень запинена — failover лестницы в прогоне отключён намеренно.",
   "_conversationRungsToday": "В лестнице conversation сейчас ровно три ступени: gemini-3.1-flash-lite-preview (прод), gemini-2.5-flash, mimo-v2.6-flash (подписка Go). Дешёвые ling-3.0-flash и openrouter/xiaomi/mimo-v2.6-flash в неё не входят — чтобы они стали кандидатами на письма, их нужно сначала ДОБАВИТЬ в лестницу conversation (изменение продукта, не бенчмарка) и зафиксировать здесь.",
   "models": [
     {
@@ -7,6 +7,7 @@
       "ladder": "conversation",
       "rung": "openrouter/google/gemini-3.1-flash-lite-preview",
       "role": "prod",
+      "section": "переписка",
       "note": "текущая продовая ступень, baseline",
       "price": {
         "input": 0.25,
@@ -18,6 +19,7 @@
       "ladder": "conversation",
       "rung": "openrouter/google/gemini-2.5-flash",
       "role": "cand",
+      "section": "переписка",
       "note": "следующая ступень",
       "price": {
         "input": 0.3,
@@ -29,6 +31,7 @@
       "ladder": "conversation",
       "rung": "opencode-go/mimo-v2.6-flash",
       "role": "cand",
+      "section": "переписка",
       "note": "дешёвая ступень из подписки Go; в отчёте цена — по прайсу openrouter/xiaomi/mimo-v2.6-flash (0.14/0.28), подписка Go в прайс не входит",
       "price": {
         "input": 0.14,
