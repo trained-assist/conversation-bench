@@ -138,7 +138,11 @@ async function runOne(c, m) {
 // Прод пишет письмо с maxTokens 800 (hh-142-chain/src/conversation-generation.js), а бенч
 // у reasoning-ступеней поднимает лимит до 4000 — иначе ответ съедается рассуждениями и приходит
 // пустым. Разные лимиты — разные числа, поэтому лимит пишется в каждую запись и попадает в отчёт.
-const maxTokensOf = (m) => m.max_tokens ?? 1200;
+// Объявление функции, а не const: runOne() зовётся на верхнем уровне модуля, до инициализации
+// const — и падал бы на первом же ответе (TDZ). Регрессия ловится test/scripts.test.mjs.
+function maxTokensOf(m) {
+  return m.max_tokens ?? 1200;
+}
 
 function key(caseId, model) {
   return `${caseId}::${model}`;
