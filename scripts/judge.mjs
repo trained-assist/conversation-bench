@@ -117,16 +117,32 @@ ${B}
 Ответь строго JSON: по каждому пункту — массив из двух чисел 0–2 (первое для письма A, второе для B).
 {"goal":[0,0],"facts":[0,0],"repeats":[0,0],"tone":[0,0],"natural":[0,0],"winner":"A"|"B"|"tie","comment":"до 200 символов"}`;
 
+// Судья отвечает через же лестницу, и она иногда отдаёт 502 (у суточной квоты relay
+  // и у rate limit провайдера такое бывает). Без повтора кейс выпадал из оценки молча:
+  // в отчёте он выглядел как «не измерен», а причина была в транспорте, а не в модели.
+  const call = async () => {
+    let last;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        return await ladderChat({
+          messages: [{ role: 'user', content: rubric }],
+          ladder: cfg.ladder,
+          rung: cfg.rung,
+          temperature: 0,
+          maxTokens: 1200,
+          responseFormat: { type: 'json_object' },
+          source: 'conversation-bench-judge',
+        });
+      } catch (e) {
+        last = e;
+        await new Promise((r) => setTimeout(r, 1500 * attempt));
+      }
+    }
+    throw last;
+  };
+
   try {
-    const raw = (await ladderChat({
-      messages: [{ role: 'user', content: rubric }],
-      ladder: cfg.ladder,
-      rung: cfg.rung,
-      temperature: 0,
-      maxTokens: 1200,
-      responseFormat: { type: 'json_object' },
-      source: 'conversation-bench-judge',
-    })).content;
+    const raw = (await call()).content;
     // Модель часто дописывает хвост после объекта — вынимаем первый валидный JSON,
     // иначе кейс выпадал из оценки (см. src/judge-parse.mjs).
     const parsed = parseJudgeJson(raw);
