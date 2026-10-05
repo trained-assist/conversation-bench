@@ -107,3 +107,21 @@ test('scripts/budget.mjs печатает доли входа, экономию 
   assert.match(out, /деньги на 1000 писем/);
   assert.match(out, /калибровка «оценка → факт»/);
 });
+test('строка эталона (role: baseline) не требует пары ladder+rung', async () => {
+  const { readModelConfig } = await import('../src/config.mjs');
+  const { writeFileSync, mkdtempSync, rmSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+  const dir = mkdtempSync(join(tmpdir(), 'bench-cfg-'));
+  const file = join(dir, 'models.json');
+  writeFileSync(file, JSON.stringify({
+    models: [
+      { id: 'prod-reference', role: 'baseline', note: 'продовые ответы из корпуса' },
+      { id: 'mimo', ladder: 'conversation', rung: 'opencode-go/mimo-v2.6-flash' },
+    ],
+  }));
+  const cfg = readModelConfig(file);
+  assert.equal(cfg.models.length, 2);
+  assert.equal(cfg.models[0].id, 'prod-reference');
+  rmSync(dir, { recursive: true, force: true });
+});

@@ -24,13 +24,16 @@ export function readModelConfig(file) {
 
   const ids = new Set();
   const models = list.map((m, i) => {
-    if (!m.ladder || !m.rung) {
+    // Строка «эталон» (role: 'baseline') — не вызов модели, а продовые ответы из корпуса:
+    // лестницы и ступени у неё нет по определению, и требовать их нельзя.
+    const isBaseline = m.role === 'baseline' || m.baseline === true;
+    if (!isBaseline && (!m.ladder || !m.rung)) {
       throw new Error(`${file}: у модели #${i + 1} (${m.id ?? m.model ?? '?'}) нет пары ladder+rung`);
     }
     const id = m.id ?? m.model ?? m.rung;
     if (ids.has(id)) throw new Error(`${file}: дважды повторяется id "${id}" — результаты неразличимы в отчёте`);
     ids.add(id);
-    if (!RUNG_RE.test(m.rung)) {
+    if (!isBaseline && !RUNG_RE.test(m.rung)) {
       throw new Error(`${file}: rung "${m.rung}" (${id}) не похож на ступень лестницы вида провайдер/модель — сначала добавь ступень в config/ladders.json лестницы`);
     }
     return { ...m, id, model: id };
