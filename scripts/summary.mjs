@@ -23,6 +23,9 @@ for (const r of rows) {
   groups.get(r.model).push(r);
 }
 
+// Округляем до 4 знаков: длинная десятичная дробь вроде 0.8123456789 — это 10 цифр подряд,
+// и строгий гейт ПДн видит в ней телефон (8-123-456-78-9). Отчёту 17 знаков не нужны.
+const r4 = (v) => (typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 10000) / 10000 : v);
 const sorted = (a) => [...a].sort((x, y) => x - y);
 const median = (a) => (a.length ? sorted(a)[Math.floor(a.length / 2)] : null);
 const quant = (a, q) => (a.length ? sorted(a)[Math.min(sorted(a).length - 1, Math.floor(a.length * q))] : null);
@@ -57,20 +60,20 @@ const modelsOut = [...groups.entries()].map(([id, rs]) => {
     role: rs.find((r) => r.role)?.role ?? null,
     n: rs.length,
     errors: rs.length - ok.length,
-    all_pass: ok.filter((r) => r.deterministic?.all_pass).length / (ok.length || 1),
-    checks: perCheck(ok),
+    all_pass: r4(ok.filter((r) => r.deterministic?.all_pass).length / (ok.length || 1)),
+    checks: Object.fromEntries(Object.entries(perCheck(ok)).map(([k, v]) => [k, r4(v)])),
     judge: {
       n: judged.length,
-      candidate_wins: judged.filter((r) => r.judge.vs_prod === 'candidate').length / (judged.length || 1),
-      ties: judged.filter((r) => r.judge.vs_prod === 'tie').length / (judged.length || 1),
-      prod_wins: judged.filter((r) => r.judge.vs_prod === 'prod').length / (judged.length || 1),
+      candidate_wins: r4(judged.filter((r) => r.judge.vs_prod === 'candidate').length / (judged.length || 1)),
+      ties: r4(judged.filter((r) => r.judge.vs_prod === 'tie').length / (judged.length || 1)),
+      prod_wins: r4(judged.filter((r) => r.judge.vs_prod === 'prod').length / (judged.length || 1)),
     },
     tokens: {
       in: median(ok.map((r) => r.usage?.prompt_tokens).filter(Number)),
       out: median(ok.map((r) => r.usage?.completion_tokens).filter(Number)),
       reasoning: median(ok.map((r) => r.usage?.completion_tokens_details?.reasoning_tokens).filter(Number)),
     },
-    cost_per_call: cost,
+    cost_per_call: r4(cost),
     latency_ms: { p50: quant(ok.map((r) => r.latency_ms).filter(Number), 0.5), p95: quant(ok.map((r) => r.latency_ms).filter(Number), 0.95) },
     max_tokens: median(ok.map((r) => r.max_tokens).filter(Number)),
   };
