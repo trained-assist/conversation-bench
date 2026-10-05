@@ -45,6 +45,19 @@ const CHECK_LEGEND = [
 // Отчёт может печатать и наш id, и «сырую» ступень лестницы (provider/model) — убираем
 // префикс провайдера, чтобы колонка читалась: opencode-go/mimo → mimo.
 const short = (m) => m.replace(/^(openrouter|opencode-go|opencode-zen|zen-pool)\//, '');
+
+// Ступень лестницы → человеческое название тарифа. Одного id модели в отчёте мало: «mimo»
+// сегодня это две разные ступени — подписка Go и пул zen, — а отличаются они и ценой, и
+// квотой, и скоростью в 4.5 раза. Тариф пишем явно, потому что решение принимается по нему.
+const TIER = [
+  [/^openrouter\/.*:free$/, 'OpenRouter :free'],
+  [/^openrouter\//, 'OpenRouter платный'],
+  [/^opencode-go\/.*-free$/, 'подписка Go (free)'],
+  [/^opencode-go\//, 'подписка Go'],
+  [/^zen-pool\//, 'пул zen (в воркере)'],
+  [/^opencode-zen\//, 'zen relay (лимит на IP)'],
+];
+const tierOf = (rung) => TIER.find(([re]) => re.test(rung ?? ''))?.[1] ?? null;
 const sorted = (a) => [...a].sort((x, y) => x - y);
 const median = (a) => (a.length ? sorted(a)[Math.floor(a.length / 2)] : null);
 const quant = (a, q) => (a.length ? sorted(a)[Math.min(sorted(a).length - 1, Math.floor(a.length * q))] : null);
@@ -84,8 +97,12 @@ const table = [...groups.entries()].map(([model, rs]) => {
       }, 0) / ok.length
     : null;
 
+  const rung = rs.find((r) => r.rung)?.rung ?? null;
+
   return {
     model: short(model),
+    rung,
+    tier: rung ? tierOf(rung) : 'эталон (прод, не вызов)',
     n: rs.length,
     errors: rs.length - ok.length,
     det: pct(detPass.length, ok.length),
@@ -116,10 +133,10 @@ const md = [
   '',
   `Прогон: ${args.results} · кейсов: ${rows.length} · дата: ${new Date().toISOString().slice(0, 16)}Z`,
   '',
-  `| Модель | Ответов | Ошибок вызова | Годных писем | ${checkNames.map((c) => CHECK_LABELS[c] ?? c).join(' | ')} | Побед vs прод | Ничьи | Токены в | Токены out | Из них рассуждения | Лимит ответа | $/письмо | p50 мс | p95 мс | Сумма судьи |`,
-  `|---|---|---|---|${checkNames.map(() => '---').join('|')}|---|---|---|---|---|---|---|---|---|`,
+  `| Модель | Ступень лестницы | Тариф | Ответов | Ошибок вызова | Годных писем | ${checkNames.map((c) => CHECK_LABELS[c] ?? c).join(' | ')} | Побед vs прод | Ничьи | Токены в | Токены out | Из них рассуждения | Лимит ответа | $/письмо | p50 мс | p95 мс | Сумма судьи |`,
+  `|---|---|---|---|---|${checkNames.map(() => '---').join('|')}|---|---|---|---|---|---|---|---|---|`,
   ...table.map((t) =>
-    `| ${t.model} | ${t.n} | ${t.errors} | ${t.det} | ${checkNames.map((c) => t.perCheck[c] ?? '—').join(' | ')} | ${t.win} | ${t.tie} | ${t.tin ?? '—'} | ${t.tout ?? '—'} | ${t.reason || '—'} | ${t.maxTok ?? '—'} | ${t.cost} | ${t.p50 ?? '—'} | ${t.p95 ?? '—'} | ${t.judgeSum == null ? '—' : `${t.judgeSum.toFixed(1)}/10`} |`),
+    `| ${t.model} | ${t.rung ?? '— (эталон)'} | ${t.tier} | ${t.n} | ${t.errors} | ${t.det} | ${checkNames.map((c) => t.perCheck[c] ?? '—').join(' | ')} | ${t.win} | ${t.tie} | ${t.tin ?? '—'} | ${t.tout ?? '—'} | ${t.reason || '—'} | ${t.maxTok ?? '—'} | ${t.cost} | ${t.p50 ?? '—'} | ${t.p95 ?? '—'} | ${t.judgeSum == null ? '—' : `${t.judgeSum.toFixed(1)}/10`} |`),
   '',
   '**Годных писем** — доля ответов, прошедших все проверки сразу. **Ошибок вызова** — транспорт',
   '(429/401/502, пустой ответ), а не качество письма: ступень не ответила, и кейс не измерен.',
