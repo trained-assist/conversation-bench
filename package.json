@@ -15,7 +15,8 @@
     "run": "node scripts/run-bench.mjs",
     "judge": "node scripts/judge.mjs",
     "report": "node scripts/report.mjs",
-    "baseline": "node scripts/baseline.mjs"
+    "baseline": "node scripts/baseline.mjs",
+    "summary": "node scripts/summary.mjs"
   },
   "dependencies": {
     "gpt-tokenizer": "^2.9.0"
