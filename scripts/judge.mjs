@@ -30,6 +30,14 @@ const ds = loadDataset(args.dataset ?? 'datasets/current');
 const byCase = new Map(ds.cases.map((c) => [c.id, c]));
 const results = readFileSync(resultsFile, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
 
+// Строка, которая сама является эталоном (продовые ответы как «модель prod-reference»), судить
+// бессмысленно: судья сравнил бы ответ с самим собой и нарисовал 100% ничьих. Такие строки
+// проходят только детерминированный слой — а он по эталону показывает, сколько ложных
+// срабатываний у самих проверок.
+const skipJudge = new Set(
+  String(args['skip-judge-models'] ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+);
+
 mkdirSync(dirname(out), { recursive: true });
 const stream = createWriteStream(out);
 
@@ -53,7 +61,7 @@ for (const r of results) {
 
   const entry = { ...r, deterministic: { ...scoreChecks(det.checks), checks: det.checks } };
 
-  if (!r.error && c.reference?.text && ladderToken()) {
+  if (!r.error && c.reference?.text && ladderToken() && !skipJudge.has(r.model)) {
     entry.judge = await blindPair(c.id, c.reference.text, r.text, prevCandidates, judgeCfg);
   }
   stream.write(JSON.stringify(entry) + '\n');

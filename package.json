@@ -14,7 +14,8 @@
     "extract": "node scripts/extract-corpus.mjs",
     "run": "node scripts/run-bench.mjs",
     "judge": "node scripts/judge.mjs",
-    "report": "node scripts/report.mjs"
+    "report": "node scripts/report.mjs",
+    "baseline": "node scripts/baseline.mjs"
   },
   "dependencies": {
     "gpt-tokenizer": "^2.9.0"
