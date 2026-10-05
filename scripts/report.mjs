@@ -46,7 +46,9 @@ const table = [...groups.entries()].map(([model, rs]) => {
   const tout = median(ok.map((r) => r.usage?.completion_tokens).filter(Number));
   const reason = median(ok.map((r) => r.usage?.completion_tokens_details?.reasoning_tokens).filter(Number)) ?? 0;
   const p = price[model] ?? {};
-  const cost = ok.length
+  // Цена и сумма судьи считаются только когда есть чем считать: у строки «эталон» нет usage
+  // (это не вызов модели), а $0.00000 в отчёте читается как «бесплатно», а не «не измерено».
+  const cost = ok.some((r) => r.usage)
     ? ok.reduce((a, r) => {
         const u = r.usage ?? {};
         return a + ((u.prompt_tokens ?? 0) * (p.input ?? 0) + (u.completion_tokens ?? 0) * (p.output ?? 0)) / 1e6;
@@ -68,7 +70,7 @@ const table = [...groups.entries()].map(([model, rs]) => {
     cost: cost == null ? '—' : `$${cost.toFixed(5)}`,
     p50: p50(ok.map((r) => r.latency_ms)),
     p95: p95(ok.map((r) => r.latency_ms)),
-    judgeSum: judged.reduce((a, r) => a + sumScores(r.judge), 0) / (judged.length || 1),
+    judgeSum: judged.length ? judged.reduce((a, r) => a + sumScores(r.judge), 0) / judged.length : null,
     perCheck: perCheckRates(ok),
   };
 });
@@ -97,7 +99,7 @@ const md = [
   '| Модель | N | Ошибки | Дет. проверки | Побед vs прод | Ничьи | Токены в | Токены out | Из них рассуждения | Лимит ответа | $/письмо | p50 мс | p95 мс | Сумма судьи |',
   '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|',
   ...table.map((t) =>
-    `| ${t.model} | ${t.n} | ${t.errors} | ${t.det} | ${t.win} | ${t.tie} | ${t.tin ?? '—'} | ${t.tout ?? '—'} | ${t.reason || '—'} | ${t.maxTok ?? '—'} | ${t.cost} | ${t.p50 ?? '—'} | ${t.p95 ?? '—'} | ${t.judgeSum.toFixed(1)}/10 |`),
+    `| ${t.model} | ${t.n} | ${t.errors} | ${t.det} | ${t.win} | ${t.tie} | ${t.tin ?? '—'} | ${t.tout ?? '—'} | ${t.reason || '—'} | ${t.maxTok ?? '—'} | ${t.cost} | ${t.p50 ?? '—'} | ${t.p95 ?? '—'} | ${t.judgeSum == null ? '—' : `${t.judgeSum.toFixed(1)}/10`} |`),
   '',
   ...checkTable,
   'Судья слепой: продовый ответ и кандидат перемешаны, автор неизвестен. Дет. проверки — бесплатно и до судьи.',
