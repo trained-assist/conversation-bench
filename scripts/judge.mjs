@@ -4,7 +4,7 @@
 //  2) слепой судья: продовый ответ и ответ кандидата подаются без имён, порядок определяется
 //     детерминированно от case id — судья не знает, кто автор, и привязка воспроизводима.
 //
-//   node scripts/judge.mjs --results results/run.jsonl --dataset datasets/current --out results/run.judged.jsonl
+//   node scripts/judge.mjs --results results/run.jsonl --dataset datasets/current --out results/run.judged.jsonl [--concurrency 3]
 import { readFileSync, writeFileSync, mkdirSync, createWriteStream } from 'node:fs';
 import { dirname } from 'node:path';
 import { deterministicChecks, repeatedQuestion, scoreChecks } from '../src/checks.mjs';
@@ -39,11 +39,36 @@ const skipJudge = new Set(
 );
 
 mkdirSync(dirname(out), { recursive: true });
-const stream = createWriteStream(out);
 
-for (const r of results) {
+// Судья — сетевой вызов на каждый ответ, поэтому строки считаются пулом воркеров, а не по одной:
+// на 700 ответах последовательный проход занимал больше часа. Порядок строк на выходе — как во
+// входном файле (судья идёт по case id, но файл результатов должен оставаться воспроизводимым),
+// поэтому ответы пишем в буфер и сливаем в конце, а не по мере готовности.
+const concurrency = Math.max(1, Number(args.concurrency ?? 3) || 3);
+const entries = new Array(results.length);
+let next = 0;
+let done = 0;
+
+async function worker() {
+  while (next < results.length) {
+    const i = next++;
+    entries[i] = await scoreOne(results[i]);
+    if (++done % 50 === 0 || done === results.length) {
+      console.error(`  ${done}/${results.length}`);
+    }
+  }
+}
+await Promise.all(Array.from({ length: Math.min(concurrency, results.length) }, () => worker()));
+
+const stream = createWriteStream(out);
+for (const e of entries) if (e) stream.write(JSON.stringify(e) + '\n');
+stream.end();
+await new Promise((r) => stream.on('finish', r));
+console.log(`Оценено ${entries.filter(Boolean).length} из ${results.length} → ${out}`);
+
+async function scoreOne(r) {
   const c = byCase.get(r.case);
-  if (!c) continue;
+  if (!c) return null;
   const prevCandidates = c.messages
     .filter((m) => m.role !== 'system')
     .map((m) => m.content ?? '');
@@ -64,11 +89,8 @@ for (const r of results) {
   if (!r.error && c.reference?.text && ladderToken() && !skipJudge.has(r.model)) {
     entry.judge = await blindPair(c.id, c.reference.text, r.text, prevCandidates, judgeCfg);
   }
-  stream.write(JSON.stringify(entry) + '\n');
+  return entry;
 }
-stream.end();
-await new Promise((r) => stream.on('finish', r));
-console.log(`Оценено ${results.length} → ${out}`);
 
 async function blindPair(caseId, prodText, candText, history, cfg) {
   const model = `${cfg.ladder}/${cfg.rung}`;
