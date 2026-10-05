@@ -41,18 +41,20 @@ const skipJudge = new Set(
 mkdirSync(dirname(out), { recursive: true });
 
 // Судья — сетевой вызов на каждый ответ, поэтому строки считаются пулом воркеров, а не по одной:
-// на 700 ответах последовательный проход занимал больше часа. Порядок строк на выходе — как во
-// входном файле (судья идёт по case id, но файл результатов должен оставаться воспроизводимым),
-// поэтому ответы пишем в буфер и сливаем в конце, а не по мере готовности.
+// на 700 ответах последовательный проход занимал больше часа. Пишем по мере готовности, а не в
+// буфер: процесс живёт десятки минут и падает (сессия ssh, лимит воркера) — с буфером терялись
+// все уже посчитанные строки. Порядок строк в файле результатов не значим: отчёт группирует по
+// модели, а run-bench --resume ищет пары case×model, а не позиции.
 const concurrency = Math.max(1, Number(args.concurrency ?? 3) || 3);
-const entries = new Array(results.length);
+const stream = createWriteStream(out);
 let next = 0;
 let done = 0;
 
 async function worker() {
   while (next < results.length) {
     const i = next++;
-    entries[i] = await scoreOne(results[i]);
+    const entry = await scoreOne(results[i]);
+    if (entry) stream.write(JSON.stringify(entry) + '\n');
     if (++done % 50 === 0 || done === results.length) {
       console.error(`  ${done}/${results.length}`);
     }
@@ -60,11 +62,9 @@ async function worker() {
 }
 await Promise.all(Array.from({ length: Math.min(concurrency, results.length) }, () => worker()));
 
-const stream = createWriteStream(out);
-for (const e of entries) if (e) stream.write(JSON.stringify(e) + '\n');
 stream.end();
 await new Promise((r) => stream.on('finish', r));
-console.log(`Оценено ${entries.filter(Boolean).length} из ${results.length} → ${out}`);
+console.log(`Оценено ${done} из ${results.length} → ${out}`);
 
 async function scoreOne(r) {
   const c = byCase.get(r.case);
