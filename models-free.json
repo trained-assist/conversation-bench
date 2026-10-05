@@ -7,6 +7,7 @@
       "ladder": "free",
       "rung": "opencode-go/space-bunny-free",
       "role": "cand",
+      "section": "бесплатные",
       "note": "первая ступень бесплатной лестницы",
       "max_tokens": 4000
     },
@@ -15,6 +16,7 @@
       "ladder": "free",
       "rung": "opencode-go/longcat-2.5-preview-free",
       "role": "cand",
+      "section": "бесплатные",
       "note": "вторая бесплатная ступень Go",
       "max_tokens": 4000
     },
@@ -23,6 +25,7 @@
       "ladder": "free",
       "rung": "opencode-zen/nemotron-3.5-lightning-free",
       "role": "cand",
+      "section": "бесплатные",
       "note": "nemotron через relay zen; кандидат в ступень conversation — быстрый, бесплатный, по-русски неизмерен",
       "max_tokens": 4000
     },
@@ -31,6 +34,7 @@
       "ladder": "free",
       "rung": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
       "role": "cand",
+      "section": "бесплатные",
       "note": "крупная открытая модель через бесплатный тариф",
       "max_tokens": 4000
     },
@@ -39,6 +43,7 @@
       "ladder": "free",
       "rung": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
       "role": "cand",
+      "section": "бесплатные",
       "note": "вторая nemotron через OpenRouter :free — 550B против 120B, сравнить на одном корпусе",
       "max_tokens": 4000
     },
@@ -47,6 +52,7 @@
       "ladder": "free",
       "rung": "openrouter/inclusionai/ling-3.0-flash-sante:free",
       "role": "cand",
+      "section": "бесплатные",
       "note": "ling по-русски, бесплатный тариф",
       "max_tokens": 4000
     }
