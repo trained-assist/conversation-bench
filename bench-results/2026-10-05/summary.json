@@ -1,0 +1,342 @@
+{
+  "schema_version": 1,
+  "results": "results/run-all2.jsonl",
+  "dataset": null,
+  "cases": 900,
+  "generated_at": "2026-10-05T07:07:38.150Z",
+  "models": [
+    {
+      "id": "prod-reference",
+      "rung": null,
+      "ladder": null,
+      "role": "baseline",
+      "n": 100,
+      "errors": 0,
+      "all_pass": 0.99,
+      "checks": {
+        "language_ru": 0.99,
+        "length_120_1500": 0.99,
+        "no_refusal": 1,
+        "no_service_noise": 1,
+        "no_markdown": 1,
+        "no_cjk": 1,
+        "no_symbol_spam": 1,
+        "no_placeholder_leak": 1,
+        "no_repeat_question": 1
+      },
+      "judge": {
+        "n": 0,
+        "candidate_wins": 0,
+        "ties": 0,
+        "prod_wins": 0
+      },
+      "tokens": {
+        "in": null,
+        "out": null,
+        "reasoning": null
+      },
+      "cost_per_call": null,
+      "latency_ms": {
+        "p50": null,
+        "p95": null
+      },
+      "max_tokens": null
+    },
+    {
+      "id": "nemotron-3-super-free",
+      "rung": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "ladder": "free",
+      "role": "cand",
+      "n": 100,
+      "errors": 0,
+      "all_pass": 0.97,
+      "checks": {
+        "language_ru": 1,
+        "length_120_1500": 0.99,
+        "no_refusal": 1,
+        "no_service_noise": 1,
+        "no_markdown": 0.99,
+        "no_cjk": 0.99,
+        "no_symbol_spam": 1,
+        "no_placeholder_leak": 0.99,
+        "no_repeat_question": 1
+      },
+      "judge": {
+        "n": 100,
+        "candidate_wins": 0.43,
+        "ties": 0.02,
+        "prod_wins": 0.55
+      },
+      "tokens": {
+        "in": 4750,
+        "out": 1088,
+        "reasoning": 913
+      },
+      "cost_per_call": 0,
+      "latency_ms": {
+        "p50": 8688,
+        "p95": 31297
+      },
+      "max_tokens": 4000
+    },
+    {
+      "id": "ling-3.0-flash-sante-free",
+      "rung": "openrouter/inclusionai/ling-3.0-flash-sante:free",
+      "ladder": "free",
+      "role": "cand",
+      "n": 100,
+      "errors": 0,
+      "all_pass": 0.94,
+      "checks": {
+        "language_ru": 1,
+        "length_120_1500": 1,
+        "no_refusal": 1,
+        "no_service_noise": 0.99,
+        "no_markdown": 0.97,
+        "no_cjk": 1,
+        "no_symbol_spam": 1,
+        "no_placeholder_leak": 0.98,
+        "no_repeat_question": 1
+      },
+      "judge": {
+        "n": 100,
+        "candidate_wins": 0.68,
+        "ties": 0.01,
+        "prod_wins": 0.31
+      },
+      "tokens": {
+        "in": 5082,
+        "out": 1380,
+        "reasoning": 1392
+      },
+      "cost_per_call": 0,
+      "latency_ms": {
+        "p50": 8024,
+        "p95": 24030
+      },
+      "max_tokens": 4000
+    },
+    {
+      "id": "longcat-2.5-preview-free",
+      "rung": "opencode-go/longcat-2.5-preview-free",
+      "ladder": "free",
+      "role": "cand",
+      "n": 100,
+      "errors": 1,
+      "all_pass": 0.9090909090909091,
+      "checks": {
+        "language_ru": 1,
+        "length_120_1500": 1,
+        "no_refusal": 1,
+        "no_service_noise": 1,
+        "no_markdown": 0.9191919191919192,
+        "no_cjk": 1,
+        "no_symbol_spam": 1,
+        "no_placeholder_leak": 0.98989898989899,
+        "no_repeat_question": 1
+      },
+      "judge": {
+        "n": 99,
+        "candidate_wins": 0.7171717171717171,
+        "ties": 0.010101010101010102,
+        "prod_wins": 0.2727272727272727
+      },
+      "tokens": {
+        "in": 7017,
+        "out": 1074,
+        "reasoning": 831
+      },
+      "cost_per_call": 0,
+      "latency_ms": {
+        "p50": 21289,
+        "p95": 92792
+      },
+      "max_tokens": 4000
+    },
+    {
+      "id": "nemotron-3-ultra-free",
+      "rung": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "ladder": "free",
+      "role": "cand",
+      "n": 100,
+      "errors": 0,
+      "all_pass": 0.96,
+      "checks": {
+        "language_ru": 1,
+        "length_120_1500": 1,
+        "no_refusal": 1,
+        "no_service_noise": 0.98,
+        "no_markdown": 1,
+        "no_cjk": 0.99,
+        "no_symbol_spam": 1,
+        "no_placeholder_leak": 0.99,
+        "no_repeat_question": 1
+      },
+      "judge": {
+        "n": 100,
+        "candidate_wins": 0.65,
+        "ties": 0.01,
+        "prod_wins": 0.34
+      },
+      "tokens": {
+        "in": 4750,
+        "out": 732,
+        "reasoning": 532
+      },
+      "cost_per_call": 0,
+      "latency_ms": {
+        "p50": 14894,
+        "p95": 41795
+      },
+      "max_tokens": 4000
+    },
+    {
+      "id": "space-bunny-free",
+      "rung": "opencode-go/space-bunny-free",
+      "ladder": "free",
+      "role": "cand",
+      "n": 100,
+      "errors": 2,
+      "all_pass": 0.9489795918367347,
+      "checks": {
+        "language_ru": 0.9897959183673469,
+        "length_120_1500": 1,
+        "no_refusal": 1,
+        "no_service_noise": 1,
+        "no_markdown": 0.9897959183673469,
+        "no_cjk": 1,
+        "no_symbol_spam": 1,
+        "no_placeholder_leak": 0.9693877551020408,
+        "no_repeat_question": 1
+      },
+      "judge": {
+        "n": 98,
+        "candidate_wins": 0.5918367346938775,
+        "ties": 0.05102040816326531,
+        "prod_wins": 0.35714285714285715
+      },
+      "tokens": {
+        "in": 5080,
+        "out": 1599,
+        "reasoning": 1400
+      },
+      "cost_per_call": 0,
+      "latency_ms": {
+        "p50": 34386,
+        "p95": 155857
+      },
+      "max_tokens": 4000
+    },
+    {
+      "id": "nemotron-3.5-lightning-free",
+      "rung": "opencode-zen/nemotron-3.5-lightning-free",
+      "ladder": "free",
+      "role": "cand",
+      "n": 100,
+      "errors": 38,
+      "all_pass": 0.06451612903225806,
+      "checks": {
+        "language_ru": 0.0967741935483871,
+        "length_120_1500": 0.06451612903225806,
+        "no_refusal": 1,
+        "no_service_noise": 0.11290322580645161,
+        "no_markdown": 0.0967741935483871,
+        "no_cjk": 0.9032258064516129,
+        "no_symbol_spam": 0.9193548387096774,
+        "no_placeholder_leak": 0.43548387096774194,
+        "no_repeat_question": 1
+      },
+      "judge": {
+        "n": 62,
+        "candidate_wins": 0.12903225806451613,
+        "ties": 0.016129032258064516,
+        "prod_wins": 0.8548387096774194
+      },
+      "tokens": {
+        "in": 4757,
+        "out": 4000,
+        "reasoning": 4674
+      },
+      "cost_per_call": 0,
+      "latency_ms": {
+        "p50": 34554,
+        "p95": 170968
+      },
+      "max_tokens": 4000
+    },
+    {
+      "id": "mimo-v2.6-flash",
+      "rung": "opencode-go/mimo-v2.6-flash",
+      "ladder": "conversation",
+      "role": "cand",
+      "n": 100,
+      "errors": 0,
+      "all_pass": 0.9,
+      "checks": {
+        "language_ru": 1,
+        "length_120_1500": 1,
+        "no_refusal": 1,
+        "no_service_noise": 1,
+        "no_markdown": 0.99,
+        "no_cjk": 0.97,
+        "no_symbol_spam": 1,
+        "no_placeholder_leak": 0.93,
+        "no_repeat_question": 1
+      },
+      "judge": {
+        "n": 100,
+        "candidate_wins": 0.85,
+        "ties": 0,
+        "prod_wins": 0.15
+      },
+      "tokens": {
+        "in": 5089,
+        "out": 286,
+        "reasoning": 77
+      },
+      "cost_per_call": 0.0007722259999999999,
+      "latency_ms": {
+        "p50": 8066,
+        "p95": 39309
+      },
+      "max_tokens": 1200
+    },
+    {
+      "id": "zen-pool-mimo-v2.6-flash-free",
+      "rung": "zen-pool/mimo-v2.6-flash-free",
+      "ladder": "build",
+      "role": "cand",
+      "n": 100,
+      "errors": 0,
+      "all_pass": 0.88,
+      "checks": {
+        "language_ru": 1,
+        "length_120_1500": 1,
+        "no_refusal": 1,
+        "no_service_noise": 1,
+        "no_markdown": 0.99,
+        "no_cjk": 0.98,
+        "no_symbol_spam": 1,
+        "no_placeholder_leak": 0.91,
+        "no_repeat_question": 1
+      },
+      "judge": {
+        "n": 100,
+        "candidate_wins": 0.78,
+        "ties": 0.04,
+        "prod_wins": 0.18
+      },
+      "tokens": {
+        "in": 5215,
+        "out": 343,
+        "reasoning": 126
+      },
+      "cost_per_call": 0,
+      "latency_ms": {
+        "p50": 36983,
+        "p95": 138095
+      },
+      "max_tokens": 1200
+    }
+  ]
+}
