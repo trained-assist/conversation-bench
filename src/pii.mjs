@@ -37,22 +37,57 @@ const NOT_NAMES = new Set([
 /**
  * Собирает словарь имён из текста: полные ФИО, «зовут X», обращение «Имя, добрый день».
  * Из полных ФИО берём и имя, и фамилию — в письмах они встречаются по отдельности.
+ *
+ * Важное разделение сильных и слабых источников. «Зовут X» и «X, добрый день» — имя
+ * названо прямо, такой кандидат всегда в словаре. А RE.fullName — это ЛЮБЫЕ две соседние
+ * заглавные слова, и RE.leadName — любое слово с запятой в начале строки: на продовом корпусе
+ * hh так туда попадали «Кандидат», «Если», «Это», «Опыт», «Условия», «Ваш» — и каждое маскировалось
+ * в <PERSON_…>. Словарь расползался до 541 слова, из которых 288 — обычные слова русского языка,
+ * а половина словаря корпуса («ваш <PERSON_1vkk0w> работы») превращалась в токены: модели писали
+ * в ответ токены, и «пишет ли модель по-русски» становилось вопросом к нашему же обезличиванию.
+ *
+ * Отличать имя от слова позволяет регистр: имя в русском тексте пишут с заглавной, обычное
+ * слово — в любом. Считаем словоформы кандидата (основа + падежное окончание, как в маскировании)
+ * и отбрасываем того, кто в нижнем регистре встречается заметно чаще, чем в верхнем.
  */
 export function discoverNames(text) {
-  const names = new Set();
-  for (const m of text.matchAll(RE.fullName)) {
-    for (const part of m[0].split(/[- ]/)) if (!NOT_NAMES.has(part)) names.add(part);
-  }
+  const strong = new Set(); // имя названо прямо — в словарь попадает всегда
   for (const m of text.matchAll(RE.nameIntro)) {
-    if (!NOT_NAMES.has(m[1])) names.add(m[1]);
+    if (!NOT_NAMES.has(m[1])) strong.add(m[1]);
   }
   for (const m of text.matchAll(RE.salutation)) {
-    if (!NOT_NAMES.has(m[1])) names.add(m[1]);
+    if (!NOT_NAMES.has(m[1])) strong.add(m[1]);
+  }
+
+  const weak = new Set(); // кандидат из общего правила «заглавные слова» — нужен фильтр по регистру
+  for (const m of text.matchAll(RE.fullName)) {
+    for (const part of m[0].split(/[- ]/)) if (!NOT_NAMES.has(part)) weak.add(part);
   }
   for (const m of text.matchAll(RE.leadName)) {
-    if (!NOT_NAMES.has(m[1])) names.add(m[1]);
+    if (!NOT_NAMES.has(m[1])) weak.add(m[1]);
   }
+
+  const names = new Set(strong);
+  for (const w of weak) if (strong.has(w) || caseLooksLikeName(w, text)) names.add(w);
   return [...names].sort((a, b) => b.length - a.length);
+}
+
+/** Имя или обычное слово: у имени почти нет вхождений в нижнем регистре. */
+function caseLooksLikeName(word, text) {
+  const { upper, lower } = caseCounts(text, stemOf(word));
+  return lower === 0 || lower * 3 <= upper;
+}
+
+/** Сколько раз словоформы кандидата встречаются с заглавной и со строчной буквы. */
+function caseCounts(text, stem) {
+  const re = new RegExp(`(?<!${L})${escapeRe(stem.toLowerCase())}[а-яё]{0,5}(?!${L})`, 'giu');
+  let upper = 0;
+  let total = 0;
+  for (const m of text.matchAll(re)) {
+    total++;
+    if (/^[А-ЯЁ]/.test(m[0])) upper++;
+  }
+  return { upper, lower: total - upper };
 }
 
 const counter = (prefix) => {

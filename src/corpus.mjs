@@ -24,11 +24,31 @@ export function buildCase(rec, seq) {
       id: `c${String(seq).padStart(4, '0')}`,
       ts: rec.ts ?? null,
       messages: rest,
+      first_touch: !hasHistory(rest),
       reference: rec.answer ? { text: rec.answer, model: rec.model ?? null, rung: rec.rung ?? null } : null,
       prod: { model: rec.model ?? null, rung: rec.rung ?? null, temperature: rec.temperature ?? null },
     },
     prompts,
   };
+}
+
+/**
+ * Продовый промпт кладёт всю переписку в ОДНО user-сообщение («История переписки: …»), поэтому
+ * число сообщений про первое касание не говорит ничего: на корпусе hh 100 из 100 кейсов —
+ * продолжения, и приветствие требовалось от всех. Признак истории — заголовок блока в тексте.
+ */
+const HISTORY_HINT = /История переписки|переписк[аие]|предыдущие сообщения|диалог с кандидатом/i;
+
+const hasHistory = (messages) =>
+  messages.some((m) => m.role !== 'system' && HISTORY_HINT.test(m.content ?? ''));
+
+/**
+ * Первое ли это касание. Поле из корпуса — источник истины; если датасет собран до его
+ * появления, разбираем текст (на старых корпусах это даёт правильный ответ, а не «все касания»).
+ */
+export function detectFirstTouch(c) {
+  if (typeof c.first_touch === 'boolean') return c.first_touch;
+  return !hasHistory(c.messages ?? []);
 }
 
 const fingerprint = (messages) =>

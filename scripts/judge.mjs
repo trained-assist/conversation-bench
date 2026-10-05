@@ -9,6 +9,7 @@ import { readFileSync, writeFileSync, mkdirSync, createWriteStream } from 'node:
 import { dirname } from 'node:path';
 import { deterministicChecks, repeatedQuestion, scoreChecks } from '../src/checks.mjs';
 import { loadDataset } from '../src/dataset.mjs';
+import { detectFirstTouch } from '../src/corpus.mjs';
 import { ladderChat, ladderToken } from '../src/ladder.mjs';
 import { flipFor } from '../src/blind.mjs';
 import { parseJudgeJson } from '../src/judge-parse.mjs';
@@ -38,9 +39,15 @@ for (const r of results) {
   const prevCandidates = c.messages
     .filter((m) => m.role !== 'system')
     .map((m) => m.content ?? '');
-  const isFirst = prevCandidates.length <= 1;
+  const isFirst = detectFirstTouch(c);
 
-  const det = deterministicChecks(r.text, { isFirstTouch: isFirst });
+  // Промпт и эталонный ответ нужны самим проверкам: плейсхолдеры, которые есть в них, —
+  // законные (корпус обезличен), а сочиненные моделью — нет.
+  const det = deterministicChecks(r.text, {
+    isFirstTouch: isFirst,
+    promptText: prevCandidates.join('\n'),
+    referenceText: c.reference?.text ?? '',
+  });
   if (repeatedQuestion(r.text, prevCandidates)) det.checks.push({ name: 'no_repeat_question', pass: false, detail: 'вопрос уже был в истории' });
   else det.checks.push({ name: 'no_repeat_question', pass: true, detail: '' });
 

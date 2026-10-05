@@ -8,7 +8,9 @@ import { readFileSync } from 'node:fs';
 // Ступень лестницы — это id провайдера плюс модель: `opencode-go/mimo-v2.6-flash` или
 // `openrouter/nvidia/nemotron-3-super-120b-a12b:free` (у openrouter в id есть ещё namespace).
 // Именно ПРОВАЙДЕРСКАЯ строка, а не полная: она доказывает, что вызов пойдёт через лестницу.
-const RUNG_RE = /^(openrouter|opencode-go|opencode-zen|anthropic|openai|google|mistral|meta|xai)\/[^/]+(?:\/.+)?$/;
+// `zen-pool/*` — ступени локального пула zen в том же воркере: отдельный префикс, потому что
+// квоты у него свои (нет суточного лимита на IP прокси, в отличие от opencode-zen/*).
+const RUNG_RE = /^(openrouter|opencode-go|opencode-zen|zen-pool|anthropic|openai|google|mistral|meta|xai)\/[^/]+(?:\/.+)?$/;
 
 /**
  * @param {string} file путь к models.json / models-free.json
