@@ -1,5 +1,6 @@
 {
-  "_comment": "Бесплатные ступени: лестница `free` — жёсткий потолок $0 (Go free → OpenRouter :free → zen free). Смысл набора — проверить, тянет ли бесплатная ступень письма кандидатам. max_tokens 4000: у reasoning-моделей лимит ответа съедается рассуждениями (finish=length при 1200 давал пустой text в 156 ответах из 400).",
+  "_comment": "Бесплатные ступени: лестница `free` — жёсткий потолок $0 (zen-pool → Go free → OpenRouter :free → zen relay). Смысл набора — проверить, тянет ли бесплатная ступень письма кандидатам. max_tokens 4000: у reasoning-моделей лимит ответа съедается рассуждениями (finish=length при 1200 давал пустой text в 156 ответах из 400). Прод при этом пишет с 800 (hh-142-chain/src/conversation-generation.js) — колонка «Лимит ответа» в отчёте показывает, где числа несопоставимы.",
+  "_nemotron": "nemotron-3.5-lightning идёт через opencode-zen (relay, суточный лимит на IP общий с продом). Тот же вес в пуле — zen-pool/nemotron-3.5-lightning-free — в лестницу пока не добавлен: воркер отвечает `rung not in ladder` (04.10.2026). Это продуктовое изменение, а не бенчмарка.",
   "models": [
     {
       "id": "space-bunny-free",
@@ -18,11 +19,27 @@
       "max_tokens": 4000
     },
     {
+      "id": "nemotron-3.5-lightning-free",
+      "ladder": "free",
+      "rung": "opencode-zen/nemotron-3.5-lightning-free",
+      "role": "cand",
+      "note": "nemotron через relay zen; кандидат в ступень conversation — быстрый, бесплатный, по-русски неизмерен",
+      "max_tokens": 4000
+    },
+    {
       "id": "nemotron-3-super-free",
       "ladder": "free",
       "rung": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
       "role": "cand",
       "note": "крупная открытая модель через бесплатный тариф",
+      "max_tokens": 4000
+    },
+    {
+      "id": "nemotron-3-ultra-free",
+      "ladder": "free",
+      "rung": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "role": "cand",
+      "note": "вторая nemotron через OpenRouter :free — 550B против 120B, сравнить на одном корпусе",
       "max_tokens": 4000
     },
     {

@@ -102,7 +102,7 @@ async function runOne(c, m) {
         ladder: m.ladder,
         rung: m.rung,
         temperature,
-        maxTokens: m.max_tokens ?? 1200,
+        maxTokens: maxTokensOf(m),
         timeoutMs: m.timeout_ms ?? 120000,
         source: 'conversation-bench',
       });
@@ -115,6 +115,7 @@ async function runOne(c, m) {
         text: r.content,
         finish: r.finish,
         usage: r.usage,
+        max_tokens: maxTokensOf(m),
         reported_model: r.model,
         latency_ms: Date.now() - started,
         attempt,
@@ -125,13 +126,19 @@ async function runOne(c, m) {
         errors++;
         return {
           case: c.id, model: m.model, ladder: m.ladder, rung: m.rung, role: m.role ?? null,
-          error: String(e.message ?? e), latency_ms: Date.now() - started, attempt, temperature,
+          error: String(e.message ?? e), max_tokens: maxTokensOf(m),
+          latency_ms: Date.now() - started, attempt, temperature,
         };
       }
       await new Promise((r) => setTimeout(r, 500 * attempt));
     }
   }
 }
+
+// Прод пишет письмо с maxTokens 800 (hh-142-chain/src/conversation-generation.js), а бенч
+// у reasoning-ступеней поднимает лимит до 4000 — иначе ответ съедается рассуждениями и приходит
+// пустым. Разные лимиты — разные числа, поэтому лимит пишется в каждую запись и попадает в отчёт.
+const maxTokensOf = (m) => m.max_tokens ?? 1200;
 
 function key(caseId, model) {
   return `${caseId}::${model}`;
